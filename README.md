@@ -138,7 +138,6 @@ Interactive Shiny for Python dashboard for exploring model predictions and anoma
 - Station selector and date range picker in a sidebar.
 - A dual-axis Plotly chart showing actual vs predicted hourly cyclist counts, with precipitation overlaid on a secondary axis.
 - Anomaly alarms: data points where the absolute prediction error exceeds a user-defined threshold are flagged with red markers.
-- Policy simulation toggle: "Simulate no holidays" switch for what-if exploration.
 
 Loads `data/predictions.parquet` if available; falls back to `panel_merged.parquet` (without predictions).
 
