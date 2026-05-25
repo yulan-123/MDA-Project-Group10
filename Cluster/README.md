@@ -18,12 +18,12 @@ Jupyter notebook that performs the cluster analysis on the station feature profi
 | `cluster` | Assigned cluster (0, 1, 2) |
 | `long` / `lat` | Station coordinates |
 
-### `dashboard.py`
+### `dashboard_for_clusters.py`
 Interactive Shiny for Python dashboard. Displays all valid stations in 2023 on an OpenStreetMap of Flanders, coloured by cluster. Clicking a station opens its profile in the right panel: a radar chart of the five normalised features and a table of raw values.
 
 **To run:**
 ```bash
-shiny run Cluster/dashboard.py
+shiny run Cluster/dashboard_for_clusters.py
 ```
 Then open `http://127.0.0.1:8000` in your browser.
 

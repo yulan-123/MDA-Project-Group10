@@ -3,11 +3,17 @@ from shinywidgets import output_widget, render_widget
 import plotly.graph_objects as go
 import pandas as pd
 from pathlib import Path
+import sys
 
 
 ### Data ###
 
 HERE = Path(__file__).parent
+ROOT = HERE.parent
+sys.path.insert(0, str(ROOT / "src"))
+from download_data import ensure_data
+
+ensure_data(["station_profiles_clustered.csv"])
 df = pd.read_csv(HERE / "station_profiles_clustered.csv")
 
 FEATURES = [

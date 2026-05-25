@@ -2,6 +2,7 @@
 data/
 notes/
 figures/
+Cluster/station_profiles_clustered.csv
 .DS_Store
 
 # Python cache and compiled files
