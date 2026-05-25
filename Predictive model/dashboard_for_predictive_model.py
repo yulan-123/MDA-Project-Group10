@@ -4,6 +4,11 @@ from plotly.subplots import make_subplots
 from shiny.ui import HTML
 import pandas as pd
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+from download_data import ensure_data
 
 # Shared muted, colourblind-aware report palette.
 BLUE = "#2F6F9F"
@@ -16,16 +21,17 @@ GREY = "#857A70"
 # Data  
 # ---------------------------------------------------------------------------
 HERE = Path(__file__).parent
+ensure_data(["panel_merged.parquet", "predictions.parquet"])
 
 # Load pre-computed predictions (joined with actual counts)
-pred_path = HERE / "data" / "predictions.parquet"
+pred_path = ROOT / "data" / "predictions.parquet"
 if pred_path.exists():
     df_panel = pd.read_parquet(pred_path)
     df_panel["datetime"] = pd.to_datetime(df_panel["datetime"])
     df_panel["date"] = df_panel["datetime"].dt.normalize()
     HAS_PREDICTIONS = True
 else:
-    df_panel = pd.read_parquet(HERE / "data" / "panel_merged.parquet")
+    df_panel = pd.read_parquet(ROOT / "data" / "panel_merged.parquet")
     df_panel["date"] = pd.to_datetime(df_panel["datetime"]).dt.normalize()
     df_panel["datetime"] = pd.to_datetime(df_panel["datetime"])
     HAS_PREDICTIONS = False
@@ -138,4 +144,3 @@ def server(input, output, session):
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
 app = App(app_ui, server)
-

@@ -12,6 +12,7 @@ MDA-Project-Group10/
 │   ├── 01_build_event_features.py
 │   ├── 02_build_panel.py
 │   ├── split.py
+│   ├── download_data.py
 │   ├── cache_predictions.py
 │   └── cache_shap.py
 ├── Predictive model/             # EDA, model training, and prediction dashboard
@@ -31,6 +32,14 @@ MDA-Project-Group10/
 ## `src/` — Data Pipeline
 
 Run these scripts in order before using the notebooks or dashboards.
+
+### `download_data.py`
+
+Downloads the processed data assets automatically on first run. Large data files
+are not committed to GitHub; they are stored as GitHub release assets and saved
+locally under `data/` or `Cluster/` when needed.
+
+Run manually if needed: `python src/download_data.py`
 
 ### `01_build_event_features.py`
 
@@ -90,7 +99,8 @@ Years before 2023 are excluded because most stations were not yet operational (o
 
 Trains the Random Forest model and saves predictions for all three splits to `data/predictions.parquet` so the dashboard can load them without retraining.
 
-- Uses the same 20 features and hyperparameters as the baseline model in the notebook (`n_estimators=100`, `max_depth=20`, `max_samples=0.3`).
+- Downloads `panel_merged.parquet` automatically if it is missing.
+- Uses the same 20 features and hyperparameters as the no-lag baseline model in the notebook (`n_estimators=100`, `max_depth=20`, `max_samples=0.3`).
 - Excludes stations from val/test that were never seen in training.
 - Output columns include actual `cyclist_count`, `predicted`, `residual`, and `split` label.
 
@@ -122,7 +132,7 @@ Jupyter notebook covering the full modelling workflow:
 6. **Weather correlations** — Spearman correlation of weather variables against cyclist count.
 7. **Random Forest — 20 features (baseline)** — trains an RF regressor on 2023 data and evaluates on val/test. Reports MAE, RMSE, and R². Results: Train R²=0.892, Val R²=0.679, Test R²=0.649.
 8. **Random Forest — 21 features (lag-24h)** — adds a 24-hour lagged count feature. Improves test R² to 0.779.
-9. **SHAP analysis** — loads pre-computed SHAP values from `cache_shap.py` and produces:
+9. **SHAP analysis** — uses the 20-feature no-lag model as an interpretability benchmark and loads pre-computed SHAP values from `cache_shap.py`. It produces:
    - Global bar chart of mean |SHAP| per feature.
    - Beeswarm summary plot.
    - Dependence plots for `hour`, `temp_c`, and `humidity`.
@@ -140,6 +150,7 @@ Interactive Shiny for Python dashboard for exploring model predictions and anoma
 - Anomaly alarms: data points where the absolute prediction error exceeds a user-defined threshold are flagged with red markers.
 
 Loads `data/predictions.parquet` if available; falls back to `panel_merged.parquet` (without predictions).
+Both files are downloaded automatically on first run if missing.
 
 **To run:**
 ```bash
@@ -153,5 +164,4 @@ shiny run "Predictive model/dashboard_for_predictive_model.py"
 Contains the station clustering analysis (K-Means on 5 usage-profile features) and an interactive map dashboard. See [`Cluster/README.md`](Cluster/README.md) for full details.
 
 ---
-
 

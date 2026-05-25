@@ -15,6 +15,7 @@ import pandas as pd
 import shap
 from sklearn.ensemble import RandomForestRegressor
 
+from download_data import ensure_data
 from split import temporal_split
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +41,7 @@ def prep(df):
 
 
 def main():
+    ensure_data(["panel_merged.parquet"])
     print("loading panel", flush=True)
     panel = pd.read_parquet(DATA / "panel_merged.parquet")
     train, _, test = temporal_split(panel)
