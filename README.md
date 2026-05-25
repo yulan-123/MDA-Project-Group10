@@ -1,6 +1,6 @@
 # MDA-Project-Group10
 
-Analysis of cycling traffic in Flanders using AWV bicycle counting stations. The project predicts hourly cyclist counts with a Random Forest model, detects anomalies, and clusters stations by usage profile.
+Analysis of cycling traffic in Flanders using AWV bicycle counting stations. The project predicts hourly cyclist counts with a Random Forest model, compares a no-lag baseline with a 24-hour lag model, detects large prediction errors, and clusters stations by usage profile.
 
 ---
 
@@ -97,10 +97,10 @@ Years before 2023 are excluded because most stations were not yet operational (o
 
 ### `cache_predictions.py`
 
-Trains the Random Forest model and saves predictions for all three splits to `data/predictions.parquet` so the dashboard can load them without retraining.
+Trains the final Random Forest forecasting model with `lag_24h_count` and saves predictions for all three splits to `data/predictions.parquet` so the dashboard can load them without retraining.
 
 - Downloads `panel_merged.parquet` automatically if it is missing.
-- Uses the same 20 features and hyperparameters as the no-lag baseline model in the notebook (`n_estimators=100`, `max_depth=20`, `max_samples=0.3`).
+- Uses the same 21 features and hyperparameters as the lag model in the notebook (`n_estimators=100`, `max_depth=20`, `max_samples=0.3`).
 - Excludes stations from val/test that were never seen in training.
 - Output columns include actual `cyclist_count`, `predicted`, `residual`, and `split` label.
 
@@ -110,7 +110,9 @@ Run once: `python src/cache_predictions.py`
 
 ### `cache_shap.py`
 
-Trains the same Random Forest and computes SHAP values on a 5000-row random sample of the test set. Saves the result to `data/shap_values.pkl`.
+Trains the 20-feature no-lag Random Forest baseline and computes SHAP values on a 5000-row random sample of the test set. Saves the result to `data/shap_values.pkl`.
+
+This SHAP cache is intentionally based on the no-lag baseline, not the final lag model, because the lag feature dominates the final model and makes the remaining temporal, weather, location, and event variables harder to interpret.
 
 The pickle contains: the feature sample, SHAP values array, explainer expected value, and metadata (seed, feature names).
 
@@ -131,7 +133,7 @@ Jupyter notebook covering the full modelling workflow:
 5. **Top stations** — horizontal bar chart of the 15 busiest stations by total count.
 6. **Weather correlations** — Spearman correlation of weather variables against cyclist count.
 7. **Random Forest — 20 features (baseline)** — trains an RF regressor on 2023 data and evaluates on val/test. Reports MAE, RMSE, and R². Results: Train R²=0.892, Val R²=0.679, Test R²=0.649.
-8. **Random Forest — 21 features (lag-24h)** — adds a 24-hour lagged count feature. Improves test R² to 0.779.
+8. **Random Forest — 21 features (lag-24h)** — adds a 24-hour lagged count feature and is used as the final forecasting model. Results: Train R²=0.883, Val R²=0.708, Test R²=0.779.
 9. **SHAP analysis** — uses the 20-feature no-lag model as an interpretability benchmark and loads pre-computed SHAP values from `cache_shap.py`. It produces:
    - Global bar chart of mean |SHAP| per feature.
    - Beeswarm summary plot.
@@ -149,7 +151,7 @@ Interactive Shiny for Python dashboard for exploring model predictions and anoma
 - A dual-axis Plotly chart showing actual vs predicted hourly cyclist counts, with precipitation overlaid on a secondary axis.
 - Anomaly alarms: data points where the absolute prediction error exceeds a user-defined threshold are flagged with red markers.
 
-Loads `data/predictions.parquet` if available; falls back to `panel_merged.parquet` (without predictions).
+Loads `data/predictions.parquet` from the final lag model if available; falls back to `panel_merged.parquet` (without predictions).
 Both files are downloaded automatically on first run if missing.
 
 **To run:**
@@ -164,4 +166,3 @@ shiny run "Predictive model/dashboard_for_predictive_model.py"
 Contains the station clustering analysis (K-Means on 5 usage-profile features) and an interactive map dashboard. See [`Cluster/README.md`](Cluster/README.md) for full details.
 
 ---
-

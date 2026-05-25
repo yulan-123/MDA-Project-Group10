@@ -7,6 +7,7 @@ to this repository. The notebooks, cache scripts, and dashboards call
 """
 
 from pathlib import Path
+import pickle
 from urllib.request import Request, urlopen
 
 
@@ -21,6 +22,30 @@ ASSETS = {
     "station_profiles_clustered.csv": ROOT / "Cluster" / "station_profiles_clustered.csv",
 }
 
+BASELINE_SHAP_FEATURES = [
+    "site_id", "hour", "day_of_week", "month",
+    "is_holiday", "days_to_nearest_holiday", "is_in",
+    "temp_c", "humidity", "dewpoint_c", "precip_mm", "rain_mm", "snowfall_cm",
+    "windspeed_kmh", "winddir_deg", "windgust_kmh",
+    "lat", "long", "road_bearing", "wind_impact",
+]
+
+
+def validate_asset(name, path):
+    if name != "shap_values.pkl":
+        return
+
+    with path.open("rb") as f:
+        payload = pickle.load(f)
+
+    features = list(payload.get("feature_columns", payload["sample"].columns))
+    if features != BASELINE_SHAP_FEATURES:
+        raise ValueError(
+            "data/shap_values.pkl must contain the 20-feature no-lag baseline "
+            "SHAP cache. Regenerate it with `python src/cache_shap.py` or "
+            "replace the release asset with the baseline cache."
+        )
+
 
 def download_asset(name, force=False):
     if name not in ASSETS:
@@ -28,6 +53,7 @@ def download_asset(name, force=False):
 
     path = ASSETS[name]
     if path.exists() and path.stat().st_size > 0 and not force:
+        validate_asset(name, path)
         print(f"{name} already exists")
         return path
 
@@ -45,6 +71,7 @@ def download_asset(name, force=False):
             f.write(chunk)
 
     tmp_path.replace(path)
+    validate_asset(name, path)
     print(f"Saved to {path}")
     return path
 

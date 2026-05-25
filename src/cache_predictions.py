@@ -1,7 +1,7 @@
 """
-Train the RF predictive model and save its predictions on train/val/test
-to data/predictions.parquet so the dashboard can load them without
-retraining.
+Train the final RF predictive model with the 24-hour lag feature and save its
+predictions on train/val/test to data/predictions.parquet so the dashboard can
+load them without retraining.
 
 Run: python src/cache_predictions.py
 """
@@ -26,15 +26,25 @@ FCOLS = [
     "is_holiday", "days_to_nearest_holiday", "is_in",
     "temp_c", "humidity", "dewpoint_c", "precip_mm", "rain_mm", "snowfall_cm",
     "windspeed_kmh", "winddir_deg", "windgust_kmh",
-    "lat", "long", "road_bearing", "wind_impact",
+    "lat", "long", "road_bearing", "wind_impact", "lag_24h_count",
 ]
 
 KEEP_COLS = [
     "site_id", "richting", "datetime", "naam", "lat", "long",
-    "year", "hour", "day_of_week", "is_holiday", "is_in",
+    "year", "hour", "day_of_week",
+    "is_public_holiday", "is_weekend", "is_school_holiday", "is_holiday", "is_in",
     "temp_c", "humidity", "precip_mm", "windspeed_kmh",
-    "cyclist_count",
+    "lag_24h_count", "cyclist_count",
 ]
+
+
+def add_lag_24h(panel):
+    lag_src = panel[["site_id", "richting", "datetime", "cyclist_count"]].copy()
+    lag_src["datetime"] = lag_src["datetime"] + pd.Timedelta(days=1)
+    lag_src = lag_src.rename(columns={"cyclist_count": "lag_24h_count"})
+    out = panel.merge(lag_src, on=["site_id", "richting", "datetime"], how="left")
+    out["lag_24h_count"] = out["lag_24h_count"].fillna(0)
+    return out
 
 
 def prep(df):
@@ -48,6 +58,7 @@ def main():
     ensure_data(["panel_merged.parquet"])
     print("loading panel", flush=True)
     panel = pd.read_parquet(DATA / "panel_merged.parquet")
+    panel = add_lag_24h(panel)
     train, val, test = temporal_split(panel)
     train_sites = set(train["site_id"].unique())
     val = val[val["site_id"].isin(train_sites)]
